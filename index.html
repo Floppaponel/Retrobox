@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Retrobox - Sandbox Game</title>
+    <style>
+        :root {
+            --win-bg: #008080; 
+            --face: #c0c0c0;   
+            --light: #ffffff;  
+            --shadow: #808080; 
+            --dark-shadow: #000000;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--win-bg);
+            font-family: 'MS Sans Serif', Tahoma, Arial, sans-serif;
+            font-size: 11px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+            padding: 8px;
+            overflow: hidden;
+            -webkit-font-smoothing: none;
+            touch-action: none;
+        }
+
+        .window {
+            background: var(--face);
+            border-top: 2px solid var(--light);
+            border-left: 2px solid var(--light);
+            border-right: 2px solid var(--dark-shadow);
+            border-bottom: 2px solid var(--dark-shadow);
+            box-shadow: 1px 1px 0 0 var(--shadow) inset, -1px -1px 0 0 var(--face) inset;
+            padding: 3px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            width: 100%;
+            height: 95vh;
+            max-width: 1024px;
+            box-sizing: border-box;
+            position: relative;
+        }
+
+        .title-bar {
+            background: linear-gradient(90deg, #000080, #1080d0);
+            color: white;
+            padding: 3px 4px 3px 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .title-bar-text {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            letter-spacing: 0.5px;
+            cursor: default;
+        }
+
+        .win-icon {
+            width: 16px;
+            height: 16px;
+            position: relative;
+        }
+
+        .win-icon::before {
+            content: '';
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: transparent;
+            box-shadow: 
+                4px 2px #3498db, 6px 2px #3498db, 8px 2px #3498db,
+                2px 4px #3498db, 10px 4px #3498db, 12px 4px #7f8c8d,
+                2px 6px #3498db, 6px 6px #7f8c8d, 14px 6px #7f8c8d,
+                4px 8px #3498db, 8px 8px #7f8c8d, 12px 8px #7f8c8d,
+                2px 10px #3498db, 6px 10px #3498db, 10px 10px #3498db,
+                4px 12px #3498db, 8px 12px #3498db;
+        }
+
+        .title-bar-controls button {
+            width: 16px;
+            height: 14px;
+            background: var(--face);
+            border-top: 1px solid var(--light);
+            border-left: 1px solid var(--light);
+            border-right: 1px solid var(--dark-shadow);
+            border-bottom: 1px solid var(--dark-shadow);
+            font-size: 9px;
+            font-weight: bold;
+            color: black;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 3px;
+            padding: 4px 2px;
+            border-bottom: 2px solid var(--shadow);
+            flex-wrap: wrap;
+            flex-shrink: 0;
+        }
+
+        .btn {
+            background: var(--face);
+            border-top: 1px solid var(--light);
+            border-left: 1px solid var(--light);
+            border-right: 1px solid var(--dark-shadow);
+            border-bottom: 1px solid var(--dark-shadow);
+            color: #000000;
+            padding: 4px 10px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .btn:active, .btn.active {
+            border-top: 1px solid var(--dark-shadow);
+            border-left: 1px solid var(--dark-shadow);
+            border-right: 1px solid var(--light);
+            border-bottom: 1px solid var(--light);
+            background: #e0e0e0;
+            padding: 5px 9px 3px 11px;
+        }
+
+        .btn-more {
+            background: var(--face);
+            color: #002244;
+        }
+
+        .canvas-container {
+            border-top: 2px solid var(--shadow);
+            border-left: 2px solid var(--shadow);
+            border-right: 2px solid var(--light);
+            border-bottom: 2px solid var(--light);
+            background: black;
+            flex-grow: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            image-rendering: pixelated;
+            cursor: crosshair;
+        }
+
+        .status-bar {
+            display: flex;
+            gap: 3px;
+            flex-shrink: 0;
+            text-decoration: none;
+            cursor: default;
+        }
+
+        .status-field {
+            background: var(--face);
+            border-top: 1px solid var(--shadow);
+            border-left: 1px solid var(--shadow);
+            border-right: 1px solid var(--light);
+            border-bottom: 1px solid var(--light);
+            padding: 2px 6px;
+            color: #000;
+        }
+        
+        .status-field.main { flex-grow: 1; }
+        .status-field.fps { width: 50px; text-align: center; }
+
+        .popup-window {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--face);
+            border-top: 2px solid var(--light);
+            border-left: 2px solid var(--light);
+            border-right: 2px solid var(--dark-shadow);
+            border-bottom: 2px solid var(--dark-shadow);
+            box-shadow: 1px 1px 0 0 var(--shadow) inset, -1px -1px 0 0 var(--face) inset;
+            width: 460px;
+            padding: 3px;
+            display: none; 
+            flex-direction: column;
+            gap: 6px;
+            z-index: 100;
+        }
+
+        .popup-title {
+            background: linear-gradient(90deg, #000080, #1080d0);
+            color: white;
+            padding: 3px 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+        }
+
+        .popup-content {
+            padding: 8px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+            background: var(--face);
+            border: 1px solid var(--shadow);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="window">
+        <div class="title-bar">
+            <div class="title-bar-text">
+                <div class="win-icon"></div>
+                <span>Retrobox.exe</span>
+            </div>
+            <div class="title-bar-controls">
+                <button aria-label="Close">✕</button>
+            </div>
+        </div>
+
+        <div class="toolbar">
+            <button class="btn active" data-element="1">Sand</button>
+            <button class="btn" data-element="2">Water</button>
+            <button class="btn" data-element="3">Wall</button>
+            <button class="btn" data-element="0">Eraser</button>
+            <button class="btn btn-more" id="more-btn">More Tools...</button>
+            <button class="btn" id="clear-btn" style="margin-left: auto; background: #ffebeb;">Clear All</button>
+        </div>
+        
+        <div class="canvas-container" id="c-box">
+            <canvas id="sandboxCanvas"></canvas>
+        </div>
+
+        <div class="status-bar">
+            <div class="status-field main" id="status-text">Tool: Sand | Status: Ready</div>
+            <div class="status-field fps" id="fps-counter">60 FPS</div>
+            <a href="https://floppaponel.github.io/Floppaponel-Portfolio/" class="status-field" style="width: 110px; text-align: center; text-decoration: none;">© floppaponel, 2026</a>
+        </div>
+
+        <div class="popup-window" id="itemsPopup">
+            <div class="popup-title">
+                <span>24-Element Selection</span>
+                <div class="title-bar-controls">
+                    <button id="close-popup-btn">✕</button>
+                </div>
+            </div>
+            <div class="popup-content">
+                <button class="btn sub-btn" data-element="5">Acid</button>
+                <button class="btn sub-btn" data-element="8">Lava</button>
+                <button class="btn sub-btn" data-element="6">Fire</button>
+                <button class="btn sub-btn" data-element="7">Steam</button>
+                
+                <button class="btn sub-btn" data-element="10">Oil</button>
+                <button class="btn sub-btn" data-element="4">Wood</button>
+                <button class="btn sub-btn" data-element="9">Ice</button>
+                <button class="btn sub-btn" data-element="14">Glass</button>
+                
+                <button class="btn sub-btn" data-element="15">Sponge</button>
+                <button class="btn sub-btn" data-element="11">C4 (TNT)</button>
+                <button class="btn sub-btn" data-element="12">Powder</button>
+                <button class="btn sub-btn" data-element="13">Plant</button>
+
+                <button class="btn sub-btn" data-element="17">Meteor</button>
+                <button class="btn sub-btn" data-element="18">Salt</button>
+                <button class="btn sub-btn" data-element="19">Mud</button>
+                <button class="btn sub-btn" data-element="20">Coal</button>
+                
+                <button class="btn sub-btn" data-element="21">Water Gen</button>
+                <button class="btn sub-btn" data-element="22">Lava Gen</button>
+                <button class="btn sub-btn" data-element="23">Acid Gen</button>
+                <button class="btn sub-btn" data-element="24">Sand Gen</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const EMPTY = 0;   const SAND = 1;    const WATER = 2;   const WALL = 3;
+        const WOOD = 4;    const ACID = 5;    const FIRE = 6;    const STEAM = 7;
+        const LAVA = 8;    const ICE = 9;     const OIL = 10;    const C4 = 11;
+        const POWDER = 12; const PLANT = 13;  const GLASS = 14;  const SPONGE = 15;
+        const STONE = 16;  const METEOR = 17; const SALT = 18;   const MUD = 19;
+        const COAL = 20;   const W_GEN = 21;  const L_GEN = 22;  const A_GEN = 23;
+        const S_GEN = 24;
+
+        const PALETTES = {
+            [EMPTY]: ['#000000'],
+            [SAND]:  ['#e0b034', '#d4a32a', '#eca830', '#f3b844'],
+            [WATER]: ['#3498db', '#2980b9', '#4aa3df', '#2573a6'],
+            [WALL]:  ['#7f8c8d'],
+            [WOOD]:  ['#8b5a2b', '#7a4e24', '#9c6632'],
+            [ACID]:  ['#2ecc71', '#27ae60', '#32de7c'],
+            [FIRE]:  ['#e74c3c', '#e67e22', '#f1c40f'],
+            [STEAM]: ['#bdc3c7', '#ecf0f1', '#a6b0b5'],
+            [LAVA]:  ['#ff4500', '#ff5722', '#e64a19', '#d84315'],
+            [ICE]:   ['#add8e6', '#b0e0e6', '#afeeee'],
+            [OIL]:   ['#2c3e50', '#1a252f', '#34495e'],
+            [C4]:    ['#c0392b', '#962d22', '#d9534f'],
+            [POWDER]:['#555555', '#444444', '#666666'],
+            [PLANT]: ['#27ae60', '#2196f3', '#1e824c', '#4caf50'],
+            [GLASS]: ['#e0f7fa', '#b2ebf2', '#80deea'],
+            [SPONGE]:['#f1c40f', '#f39c12', '#d4ac0d'],
+            [STONE]: ['#4f565d', '#5c636a', '#3e4449'],
+            [METEOR]:['#e67e22', '#d35400', '#f39c12'],
+            [SALT]:  ['#ffffff', '#f2f2f2', '#e6e6e6'],
+            [MUD]:   ['#3d2514', '#4d3319', '#2b1a0a'],
+            [COAL]:  ['#2c3e50', '#1a252f', '#111111'],
+            [W_GEN]: ['#00008b'], [L_GEN]: ['#8b0000'], [A_GEN]: ['#006400'], [S_GEN]: ['#8b6508']
+        };
+
+        const NAMES = {
+            [EMPTY]: 'Eraser', [SAND]: 'Sand', [WATER]: 'Water', [WALL]: 'Wall',
+            [WOOD]: 'Wood', [ACID]: 'Acid', [FIRE]: 'Fire', [STEAM]: 'Steam',
+            [LAVA]: 'Lava', [ICE]: 'Ice', [OIL]: 'Oil', [C4]: 'C4 (TNT)',
+            [POWDER]: 'Gunpowder', [PLANT]: 'Plant', [GLASS]: 'Glass', [SPONGE]: 'Sponge',
+            [METEOR]: 'Meteor', [SALT]: 'Salt', [MUD]: 'Mud', [COAL]: 'Coal',
+            [W_GEN]: 'Water Gen', [L_GEN]: 'Lava Gen', [A_GEN]: 'Acid Gen', [S_GEN]: 'Sand Gen'
+        };
+
+        const WATER_DISPERSION = 5; const OIL_DISPERSION = 4;
+        const ACID_DISPERSION = 4;  const LAVA_DISPERSION = 2; const MUD_DISPERSION = 1;
+
+        const CELL_SIZE = 4; let WIDTH = 100; let HEIGHT = 100;
+        const canvas = document.getElementById('sandboxCanvas');
+        const ctx = canvas.getContext('2d');
+        const container = document.getElementById('c-box');
+        const popup = document.getElementById('itemsPopup');
+
+        let grid, updatedGrid, colorIndices;
+
+        function initGridSize() {
+            const rect = container.getBoundingClientRect();
+            WIDTH = Math.floor(rect.width / CELL_SIZE);
+            HEIGHT = Math.floor(rect.height / CELL_SIZE);
+            canvas.width = WIDTH; canvas.height = HEIGHT;
+            grid = new Uint8Array(WIDTH * HEIGHT);
+            updatedGrid = new Uint8Array(WIDTH * HEIGHT);
+            colorIndices = new Uint8Array(WIDTH * HEIGHT);
+        }
+        window.addEventListener('resize', initGridSize);
+        initGridSize();
+
+        let currentElement = SAND; let isDrawing = false; let lastCalledTime, fps;
+
+        function getIndex(x, y) { return y * WIDTH + x; }
+        function getElement(x, y) {
+            if (x < 0 || x >= WIDTH || y < 0 || y >= HEIGHT) return 99; 
+            return grid[getIndex(x, y)];
+        }
+        function isEmpty(x, y) { return getElement(x, y) === EMPTY; }
+        
+        // Умная проверка плотности (может ли сыпучее тело упасть в эту ячейку)
+        function isLiquidOrEmpty(x, y) {
+            const el = getElement(x, y);
+            return el === EMPTY || el === WATER || el === OIL || el === ACID;
+        }
+
+        function setElement(x, y, element) {
+            if (x >= 0 && x < WIDTH && y >= 0 && y < HEIGHT) {
+                const idx = getIndex(x, y); grid[idx] = element;
+                colorIndices[idx] = Math.floor(Math.random() * PALETTES[element].length);
+            }
+        }
+        function setReactionElement(x, y, element) {
+            if (x >= 0 && x < WIDTH && y >= 0 && y < HEIGHT) {
+                const idx = getIndex(x, y); grid[idx] = element;
+                colorIndices[idx] = Math.floor(Math.random() * PALETTES[element].length);
+                updatedGrid[idx] = 1; 
+            }
+        }
+
+        function triggerExplosion(cx, cy, radius = 8) {
+            for (let dy = -radius; dy <= radius; dy++) {
+                for (let dx = -radius; dx <= radius; dx++) {
+                    if (dx*dx + dy*dy <= radius*radius) {
+                        const nx = cx + dx; const ny = cy + dy;
+                        const te = getElement(nx, ny);
+                        if (te !== 99 && te !== WALL && te !== GLASS) {
+                            if (te === C4 || te === POWDER) {
+                                grid[getIndex(nx, ny)] = EMPTY;
+                                setTimeout(() => triggerExplosion(nx, ny, te === C4 ? 8 : 4), 30);
+                            } else {
+                                if (Math.random() < 0.6) setReactionElement(nx, ny, FIRE);
+                                else setReactionElement(nx, ny, EMPTY);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        function applyLiquidPhysics(x, y, element, dispersionRate, dir) {
+            if (isEmpty(x, y + 1)) { moveElement(x, y, x, y + 1); return true; }
+            if (isEmpty(x + dir, y + 1)) { moveElement(x, y, x + dir, y + 1); return true; }
+            if (isEmpty(x - dir, y + 1)) { moveElement(x, y, x - dir, y + 1); return true; }
+
+            let leftSpace = 0, rightSpace = 0;
+            for (let d = 1; d <= dispersionRate; d++) {
+                if (isEmpty(x - d, y)) leftSpace = d; else if (getElement(x - d, y) !== element) break; 
+            }
+            for (let d = 1; d <= dispersionRate; d++) {
+                if (isEmpty(x + d, y)) rightSpace = d; else if (getElement(x + d, y) !== element) break;
+            }
+            if (leftSpace > 0 || rightSpace > 0) {
+                let moveDir = (leftSpace > 0 && rightSpace > 0) ? (Math.random() < 0.5 ? -leftSpace : rightSpace) : (leftSpace > 0 ? -leftSpace : rightSpace);
+                moveElement(x, y, x + moveDir, y); return true;
+            }
+            if (isEmpty(x + dir, y)) { moveElement(x, y, x + dir, y); return true; }
+            if (isEmpty(x - dir, y)) { moveElement(x, y, x - dir, y); return true; }
+            return false;
+        }
+
+        // Физика погружения сыпучих тел в жидкости
+        function applySandPhysics(x, y, element, dir) {
+            if (isLiquidOrEmpty(x, y + 1)) { swapOrMove(x, y, x, y + 1); return true; }
+            if (isLiquidOrEmpty(x + dir, y + 1)) { swapOrMove(x, y, x + dir, y + 1); return true; }
+            if (isLiquidOrEmpty(x - dir, y + 1)) { swapOrMove(x, y, x - dir, y + 1); return true; }
+            return false;
+        }
+
+        function swapOrMove(fromX, fromY, toX, toY) {
+            const fromIdx = getIndex(fromX, fromY);
+            const toIdx = getIndex(toX, toY);
+            
+            const fromEl = grid[fromIdx];
+            const fromColorIdx = colorIndices[fromIdx];
+            
+            const toEl = grid[toIdx];
+            const toColorIdx = colorIndices[toIdx];
+            
+            // Меняем элементы местами (жидкость выталкивается наверх)
+            grid[toIdx] = fromEl;
+            colorIndices[toIdx] = fromColorIdx;
+            updatedGrid[toIdx] = 1;
+            
+            grid[fromIdx] = toEl;
+            colorIndices[fromIdx] = toColorIdx;
+            if (toEl !== EMPTY) updatedGrid[fromIdx] = 1;
+        }
+
+        function updatePhysics() {
+            updatedGrid.fill(0); 
+
+            for (let y = HEIGHT - 1; y >= 0; y--) {
+                const xIndices = Array.from({length: WIDTH}, (_, i) => i);
+                if (Math.random() < 0.5) xIndices.reverse();
+
+                for (let i = 0; i < WIDTH; i++) {
+                    const x = xIndices[i]; const idx = getIndex(x, y); const element = grid[idx];
+
+                    if (element === EMPTY || element === WALL || element === GLASS || element === C4 || element === WOOD || element === ICE || element === COAL || updatedGrid[idx]) continue;
+
+                    if (element === W_GEN) { if(isEmpty(x, y+1)) setReactionElement(x, y+1, WATER); continue; }
+                    if (element === L_GEN) { if(isEmpty(x, y+1)) setReactionElement(x, y+1, LAVA); continue; }
+                    if (element === A_GEN) { if(isEmpty(x, y+1)) setReactionElement(x, y+1, ACID); continue; }
+                    if (element === S_GEN) { if(isEmpty(x, y+1)) setReactionElement(x, y+1, SAND); continue; }
+
+                    const dir = Math.random() < 0.5 ? -1 : 1;
+
+                    // КИСЛОТА
+                    if (element === ACID) {
+                        const targets = [[x, y+1], [x+1, y], [x-1, y], [x, y-1]];
+                        let reacted = false;
+                        for(let t of targets) {
+                            let te = getElement(t, t);
+                            if (te !== EMPTY && te !== WALL && te !== GLASS && te !== ACID && te !== STEAM && te !== 99) {
+                                setReactionElement(t, t, EMPTY); 
+                                setReactionElement(x, y, STEAM);   
+                                reacted = true; break;
+                            }
+                        }
+                        if (reacted) continue;
+                        applyLiquidPhysics(x, y, ACID, ACID_DISPERSION, dir);
+                    }
+
+                    // СЫПУЧИЕ ТЕЛА С ФИЗИКОЙ ПЛОТНОСТИ (ПЕСОК, ПОРОХ, СОЛЬ)
+                    else if (element === SAND || element === POWDER || element === SALT) {
+                        applySandPhysics(x, y, element, dir);
+                        
+                        if (element === SALT) {
+                            const ns = [[x, y+1], [x+1, y], [x-1, y]];
+                            for(let n of ns) { if(getElement(n, n) === WATER && Math.random() < 0.05) { setReactionElement(x, y, EMPTY); break; } }
+                        }
+                    }
+
+                    // МЕТЕОР
+                    else if (element === METEOR) {
+                        let nextX = x + 1; let nextY = y + 1;
+                        let target = getElement(nextX, nextY);
+                        if (target === EMPTY) { moveElement(x, y, nextX, nextY); }
+                        else { triggerExplosion(x, y, 6); setReactionElement(x, y, LAVA); }
+                    }
+
+                    // ГРЯЗЬ (MUD)
+                    else if (element === MUD) {
+                        applyLiquidPhysics(x, y, MUD, MUD_DISPERSION, dir);
+                    }
+
+                    // ВОДА
+                    else if (element === WATER) { applyLiquidPhysics(x, y, WATER, WATER_DISPERSION, dir); }
+
+                    // OIL
+                    else if (element === OIL) { applyLiquidPhysics(x, y, OIL, OIL_DISPERSION, dir); }
+
+                    // РАСТЕНИЯ
+                    else if (element === PLANT) {
+                        if (isEmpty(x, y + 1) && Math.random() < 0.05) { moveElement(x, y, x, y + 1); continue; }
+                        const neighbors = [[x+1, y], [x-1, y], [x, y+1], [x, y-1]];
+                        for(let t of neighbors) {
+                            if (getElement(t, t) === WATER && Math.random() < 0.04) setReactionElement(t, t, PLANT);
+                        }
+                    }
+
+                    // ГУБКА
+                    else if (element === SPONGE) {
+                        const neighbors = [[x+1, y], [x-1, y], [x, y+1], [x, y-1]];
+                        for(let t of neighbors) {
+                            let te = getElement(t, t);
+                            if (te === WATER || te === ACID || te === OIL) setReactionElement(t, t, EMPTY);
+                        }
+                    }
+
+                    // КАМЕНЬ ОТ РЕАКЦИЙ
+                    else if (element === STONE) {
+                        const bottom = getElement(x, y + 1);
+                        if (bottom === EMPTY || bottom === WATER || bottom === STEAM || bottom === OIL || bottom === ACID) {
+                            if (Math.random() < 0.1) moveElement(x, y, x, y + 1);
+                        }
+                    }
+
+                    // ЛАВА
+                    else if (element === LAVA) {
+                        const targets = [[x, y+1], [x+1, y], [x-1, y], [x, y-1]]; let reacted = false;
+                        for(let t of targets) {
+                            let tx = t; let ty = t; let te = getElement(tx, ty);
+                            if (te === WATER) { setReactionElement(tx, ty, STONE); setReactionElement(x, y, STEAM); reacted = true; break; }
+                            if (te === ICE) { setReactionElement(tx, ty, WATER); reacted = true; break; }
+                            if (te === WOOD || te === PLANT || te === SPONGE || te === COAL) setReactionElement(tx, ty, FIRE);
+                            if (te === OIL) setReactionElement(tx, ty, FIRE);
+                            if (te === POWDER) { triggerExplosion(tx, ty, 4); reacted = true; break; }
+                            if (te === C4) { triggerExplosion(tx, ty, 8); reacted = true; break; }
+                            if (te === STONE && Math.random() < 0.02) { setReactionElement(tx, ty, LAVA); reacted = true; break; }
+                        }
+                        if (!reacted) applyLiquidPhysics(x, y, LAVA, LAVA_DISPERSION, dir);
+                    }
+
+                    // ОГОНЬ
+                    else if (element === FIRE) {
+                        if (Math.random() < 0.15) { setReactionElement(x, y, EMPTY); continue; }
+                        const targets = [[x, y-1], [x+1, y], [x-1, y], [x, y+1]];
+                        for(let t of targets) {
+                            let tx = t; let ty = t; let te = getElement(tx, ty);
+                            if (te === WOOD || te === PLANT || te === SPONGE) setReactionElement(tx, ty, FIRE);
+                            if (te === COAL && Math.random() < 0.1) setReactionElement(tx, ty, FIRE); 
+                            if (te === OIL) setReactionElement(tx, ty, FIRE);
+                            if (te === POWDER) triggerExplosion(tx, ty, 4);
+                            if (te === C4) triggerExplosion(tx, ty, 8);
+                            if (te === WATER) { setReactionElement(tx, ty, STEAM); setReactionElement(x, y, EMPTY); break; }
+                            if (te === ICE) { setReactionElement(tx, ty, WATER); setReactionElement(x, y, EMPTY); break; }
+                        }
+                        let nextY = y - 1; let nextX = x + (Math.random() < 0.5 ? -1 : 1);
+                        if (isEmpty(nextX, nextY)) moveElement(x, y, nextX, nextY);
+                        else if (isEmpty(x, nextY)) moveElement(x, y, x, nextY);
+                    }
+
+                    // ПАР
+                    else if (element === STEAM) {
+                        if (Math.random() < 0.02) { setReactionElement(x, y, EMPTY); continue; }
+                        let nextY = y - 1; let nextX = x + (Math.random() < 0.5 ? -1 : 1);
+                        if (isEmpty(nextX, nextY)) moveElement(x, y, nextX, nextY);
+                        else if (isEmpty(nextX, y)) moveElement(x, y, nextX, y);
+                    }
+                }
+            }
+        }
+
+        function moveElement(fromX, fromY, toX, toY) {
+            const fromIdx = getIndex(fromX, fromY); const toIdx = getIndex(toX, toY);
+            grid[toIdx] = grid[fromIdx]; colorIndices[toIdx] = colorIndices[fromIdx];
+            grid[fromIdx] = EMPTY; updatedGrid[toIdx] = 1; 
+        }
+
+        function render() {
+            ctx.fillStyle = PALETTES[EMPTY]; ctx.fillRect(0, 0, WIDTH, HEIGHT);
+            for (let y = 0; y < HEIGHT; y++) {
+                for (let x = 0; x < WIDTH; x++) {
+                    const idx = getIndex(x, y); const element = grid[idx];
+                    if (element !== EMPTY) {
+                        ctx.fillStyle = PALETTES[element][colorIndices[idx]] || PALETTES[element];
+                        ctx.fillRect(x, y, 1, 1);
+                    }
+                }
+            }
+        }
+
+        function loop() {
+            if(!lastCalledTime) { lastCalledTime = performance.now(); fps = 60; } 
+            else {
+                let delta = (performance.now() - lastCalledTime)/1000; lastCalledTime = performance.now();
+                fps = Math.round(1/delta);
+                if (Math.random() < 0.05) document.getElementById('fps-counter').innerText = fps + ' FPS';
+            }
+            updatePhysics(); render(); requestAnimationFrame(loop);
+        }
+
+        function getCanvasCoords(e) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches.clientX : e.clientX;
+            const clientY = e.touches ? e.touches.clientY : e.clientY;
+            return {
+                x: Math.floor((clientX - rect.left) * (WIDTH / rect.width)),
+                y: Math.floor((clientY - rect.top) * (HEIGHT / rect.height))
+            };
+        }
+
+        function addElement(e) {
+            const coords = getCanvasCoords(e);
+            const radius = (currentElement === C4 || currentElement === WALL || currentElement === WOOD || currentElement === ICE || currentElement === GLASS || currentElement === SPONGE || currentElement >= 21) ? 1 : 2; 
+            for (let dy = -radius; dy <= radius; dy++) {
+                for (let dx = -radius; dx <= radius; dx++) {
+                    const x = coords.x + dx; const y = coords.y + dy;
+                    if (x >= 0 && x < WIDTH && y >= 0 && y < HEIGHT) {
+                        if (currentElement === EMPTY) { grid[getIndex(x, y)] = EMPTY; } 
+                        else if (currentElement === WALL || currentElement === WOOD || currentElement === ICE || currentElement === C4 || currentElement === GLASS || currentElement === SPONGE || currentElement === COAL || currentElement >= 21 || grid[getIndex(x, y)] === EMPTY) {
+                            setElement(x, y, currentElement);
+                        }
+                    }
+                }
+            }
+        }
+
+        canvas.addEventListener('mousedown', (e) => { isDrawing = true; addElement(e); popup.style.display = 'none'; });
+        window.addEventListener('mouseup', () => isDrawing = false);
+        canvas.addEventListener('mousemove', (e) => { if (isDrawing) addElement(e); });
+        canvas.addEventListener('touchstart', (e) => { isDrawing = true; addElement(e); popup.style.display = 'none'; e.preventDefault(); }, { passive: false });
+        window.addEventListener('touchend', () => isDrawing = false);
+        canvas.addEventListener('touchmove', (e) => { if (isDrawing) addElement(e); e.preventDefault(); }, { passive: false });
+
+        const moreBtn = document.getElementById('more-btn');
+        const closePopupBtn = document.getElementById('close-popup-btn');
+        moreBtn.addEventListener('click', (e) => { e.stopPropagation(); popup.style.display = popup.style.display === 'flex' ? 'none' : 'flex'; });
+        closePopupBtn.addEventListener('click', () => { popup.style.display = 'none'; });
+
+        document.querySelectorAll('.btn[data-element]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.btn.active').forEach(b => b.classList.remove('active'));
+                currentElement = parseInt(e.target.dataset.element);
+                if (e.target.classList.contains('sub-btn')) moreBtn.classList.add('active');
+                else e.target.classList.add('active');
+                document.getElementById('status-text').innerText = 'Tool: ' + NAMES[currentElement] + ' | Status: Ready';
+                popup.style.display = 'none';
+            });
+        });
+        document.getElementById('clear-btn').addEventListener('click', () => { grid.fill(EMPTY); });
+        loop();
+    </script>
+</body>
+</html>
