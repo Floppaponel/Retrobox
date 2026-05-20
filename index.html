@@ -367,7 +367,6 @@
         }
         function isEmpty(x, y) { return getElement(x, y) === EMPTY; }
         
-        // Умная проверка плотности (может ли сыпучее тело упасть в эту ячейку)
         function isLiquidOrEmpty(x, y) {
             const el = getElement(x, y);
             return el === EMPTY || el === WATER || el === OIL || el === ACID;
@@ -428,7 +427,6 @@
             return false;
         }
 
-        // Физика погружения сыпучих тел в жидкости
         function applySandPhysics(x, y, element, dir) {
             if (isLiquidOrEmpty(x, y + 1)) { swapOrMove(x, y, x, y + 1); return true; }
             if (isLiquidOrEmpty(x + dir, y + 1)) { swapOrMove(x, y, x + dir, y + 1); return true; }
@@ -445,8 +443,6 @@
             
             const toEl = grid[toIdx];
             const toColorIdx = colorIndices[toIdx];
-            
-            // Меняем элементы местами (жидкость выталкивается наверх)
             grid[toIdx] = fromEl;
             colorIndices[toIdx] = fromColorIdx;
             updatedGrid[toIdx] = 1;
@@ -475,7 +471,6 @@
 
                     const dir = Math.random() < 0.5 ? -1 : 1;
 
-                    // КИСЛОТА
                     if (element === ACID) {
                         const targets = [[x, y+1], [x+1, y], [x-1, y], [x, y-1]];
                         let reacted = false;
@@ -491,7 +486,6 @@
                         applyLiquidPhysics(x, y, ACID, ACID_DISPERSION, dir);
                     }
 
-                    // СЫПУЧИЕ ТЕЛА С ФИЗИКОЙ ПЛОТНОСТИ (ПЕСОК, ПОРОХ, СОЛЬ)
                     else if (element === SAND || element === POWDER || element === SALT) {
                         applySandPhysics(x, y, element, dir);
                         
@@ -529,7 +523,6 @@
                         }
                     }
 
-                    // ГУБКА
                     else if (element === SPONGE) {
                         const neighbors = [[x+1, y], [x-1, y], [x, y+1], [x, y-1]];
                         for(let t of neighbors) {
@@ -538,7 +531,6 @@
                         }
                     }
 
-                    // КАМЕНЬ ОТ РЕАКЦИЙ
                     else if (element === STONE) {
                         const bottom = getElement(x, y + 1);
                         if (bottom === EMPTY || bottom === WATER || bottom === STEAM || bottom === OIL || bottom === ACID) {
@@ -546,7 +538,6 @@
                         }
                     }
 
-                    // ЛАВА
                     else if (element === LAVA) {
                         const targets = [[x, y+1], [x+1, y], [x-1, y], [x, y-1]]; let reacted = false;
                         for(let t of targets) {
@@ -581,7 +572,6 @@
                         else if (isEmpty(x, nextY)) moveElement(x, y, x, nextY);
                     }
 
-                    // ПАР
                     else if (element === STEAM) {
                         if (Math.random() < 0.02) { setReactionElement(x, y, EMPTY); continue; }
                         let nextY = y - 1; let nextX = x + (Math.random() < 0.5 ? -1 : 1);
